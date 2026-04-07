@@ -446,6 +446,10 @@ function stringQuote(targetBlock) {
   cursor: pointer;
   outline: none;
 }
+.expr-select option {
+  color: #1a1a1a;
+  background: #ffffff;
+}
 .op-ch {
   font-size: 11px;
   opacity: 0.75;
