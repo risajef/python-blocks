@@ -4,6 +4,9 @@ A block-based Python editor built with Vue 3 and Pinia. You build programs from 
 
 The app is now focused entirely on the Python Blocks editor surface. The older alternate builder UI is no longer the product described here.
 
+## Public URL
+Open [Web Demo](https://retoweber.info/tools/python-blocks/)
+
 ## Quick Start
 
 ```bash
