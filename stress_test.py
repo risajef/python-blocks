@@ -106,7 +106,9 @@ def main(args: TrainArgs):
     writer, run_name, start_epoch = setup_run_directory(args)
     checkpoint = load_checkpoint(args)
     class_info: ClassInfo = load_class_info(args)
-    model, optim, scheduler, scaler, device = setup_model_and_optimizers(args, checkpoint, class_info)
+    model, optim, scheduler, scaler, device = setup_model_and_optimizers(
+        args, checkpoint, class_info
+    )
     train_loader, val_loader = load_dataset_and_classes(args, class_info)
 
     # Training loop
@@ -114,10 +116,14 @@ def main(args: TrainArgs):
     for epoch in range(start_epoch, args.epoch):
         # Train
         if not args.eval_only:
-            epoch_train_losses = train_epoch(model, train_loader, optim, scaler, writer, epoch, class_info, device)
+            epoch_train_losses = train_epoch(
+                model, train_loader, optim, scaler, writer, epoch, class_info, device
+            )
 
         # Validate
-        epoch_val_losses = validate_epoch(model, val_loader, writer, epoch, class_info, device)
+        epoch_val_losses = validate_epoch(
+            model, val_loader, writer, epoch, class_info, device
+        )
 
         if args.eval_only:
             break
@@ -233,8 +239,16 @@ def load_dataset_and_classes(args: TrainArgs, class_info: ClassInfo):
     )
 
     logging.info("Train type: %s", args.train_type.value)
-    logging.info("Train set size: %d (%d batches)", len(train_set), int(len(train_set) / args.batch_size))
-    logging.info("Val   set size: %d (%d batches)", len(val_set), int(len(val_set) / args.batch_size))
+    logging.info(
+        "Train set size: %d (%d batches)",
+        len(train_set),
+        int(len(train_set) / args.batch_size),
+    )
+    logging.info(
+        "Val   set size: %d (%d batches)",
+        len(val_set),
+        int(len(val_set) / args.batch_size),
+    )
 
     return train_loader, val_loader
 
@@ -268,7 +282,9 @@ def setup_model_and_optimizers(args: TrainArgs, checkpoint, class_info: ClassInf
     """Initialize model, optimizer, scheduler, and scaler."""
     device = torch.device("cuda")
 
-    model = SAM2UNet(class_info.num_classes(), model_size=args.model_size, normalize_input=False)
+    model = SAM2UNet(
+        class_info.num_classes(), model_size=args.model_size, normalize_input=False
+    )
 
     # Load checkpoint if provided
     if checkpoint is not None:
@@ -327,7 +343,9 @@ def train_epoch(
         scaler.step(optim)
         scaler.update()
 
-        writer.add_scalar("Train Loss/Batch", loss.item(), epoch * len(train_loader) + i)
+        writer.add_scalar(
+            "Train Loss/Batch", loss.item(), epoch * len(train_loader) + i
+        )
         epoch_train_losses.append(loss.item())
 
     return epoch_train_losses
@@ -385,7 +403,9 @@ def save_checkpoint(model, optim, scheduler, scaler, epoch, run_name, args: Trai
 
     # Save ONNX model if at last epoch
     if epoch == args.epoch - 1:
-        logging.info("Exporting model to ONNX format: %s", checkpoint_path.with_suffix(".onnx"))
+        logging.info(
+            "Exporting model to ONNX format: %s", checkpoint_path.with_suffix(".onnx")
+        )
         args.checkpoint_path = checkpoint_path
         from scripts.export_onnx import ExportOnnxArgs, main as export_onnx
 
@@ -503,14 +523,16 @@ if __name__ == "__main__":
         type=str,
         required=False,
         default=os.getenv("DATASET_PATH"),
-        help="path to the dataset top-level folder containing " "'images' and 'annotations' subfolders",
+        help="path to the dataset top-level folder containing "
+        "'images' and 'annotations' subfolders",
     )
     parser.add_argument(
         "--runs_path",
         type=str,
         required=False,
         default=os.getenv("RUNS_PATH"),
-        help="path to the top-level run folder. subfolders will" "be created for each run based on the run name",
+        help="path to the top-level run folder. subfolders will"
+        "be created for each run based on the run name",
     )
     parser.add_argument(
         "--run_name",
@@ -553,7 +575,8 @@ if __name__ == "__main__":
         "--eval_only",
         action="store_true",
         required=False,
-        help="if set, only evaluate the model without training." "Useful to check the performance of previous checkpoints.",
+        help="if set, only evaluate the model without training."
+        "Useful to check the performance of previous checkpoints.",
     )
     parser.add_argument(
         "--reduce_ratio",
@@ -668,6 +691,8 @@ if __name__ == "__main__":
     if args_.refine:
         args_.lr = args_.lr / 2
 
-    logging.info("Using batch size: %d, learning rate: %.6f", args_.batch_size, args_.lr)
+    logging.info(
+        "Using batch size: %d, learning rate: %.6f", args_.batch_size, args_.lr
+    )
 
     main(TrainArgs(**vars(args_)))
