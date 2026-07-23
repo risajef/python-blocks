@@ -3,33 +3,48 @@
 @tailwind utilities;
 
 :root {
-  --border-color: #cacaca;
+  color-scheme: light;
+  --border-color: #888888;
   --background-color: #ffffff;
   --background-box-title: #f7f7f7;
 
-  --dfBackgroundColor: rgba(254, 254, 254, 1);
+  --dfBackgroundColor: #ffffff;
   --dfBackgroundSize: 15px;
-  --dfBackgroundImage: radial-gradient(rgb(193, 195, 217) 1px, transparent 1px);
+  --dfBackgroundImage: radial-gradient(#888888 1px, transparent 1px);
 
   --dfNodeBackgroundColor: #ffffff;
-  --dfNodeTextColor: rgba(15, 2, 40, 1);
+  --dfNodeTextColor: #1a1a1a;
   --dfNodeBorderSize: 1px;
-  --dfNodeBorderColor: rgba(4, 55, 166, 1);
-  --dfNodeBorderRadius: 10px;
+  --dfNodeBorderColor: #8b0000;
+  --dfNodeBorderRadius: 2px;
   --dfNodeMinHeight: 40px;
   --dfNodeMinWidth: 200px;
   --dfNodeBoxShadowHL: 0px;
   --dfNodeBoxShadowVL: 2px;
-  --dfNodeBoxShadowBR: 15px;
+  --dfNodeBoxShadowBR: 5px;
   --dfNodeBoxShadowS: 2px;
-  --dfNodeBoxShadowColor: rgba(35, 59, 92, 1);
+  --dfNodeBoxShadowColor: rgba(0, 0, 0, 0.16);
+}
+
+* {
+  border-radius: 2px !important;
 }
 
 html,
 body {
   width: 100%;
   height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+  font-family: 'Inter', Arial, Helvetica, sans-serif !important;
   overflow: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Gidole', 'Inter', Arial, Helvetica, sans-serif !important;
+  color: #8b0000 !important;
 }
 
 #drawflow {
