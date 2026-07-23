@@ -119,8 +119,8 @@ function importPython() {
   height: 100%;
   width: min(420px, 34vw);
   min-width: 340px;
-  background: #0f172a;
-  border-left: 1px solid #1e293b;
+  background: #FFFFFF;
+  border-left: 1px solid #888888;
   flex-shrink: 0;
   transition: width 0.22s ease, min-width 0.22s ease;
 }
@@ -131,8 +131,8 @@ function importPython() {
 .collapsed-toggle {
   flex: 1;
   border: none;
-  background: linear-gradient(180deg, #111827 0%, #020617 100%);
-  color: #94a3b8;
+  background: #F7F7F7;
+  color: #555555;
   cursor: pointer;
   font-size: 11px;
   font-weight: 800;
@@ -142,8 +142,8 @@ function importPython() {
   transform: rotate(180deg);
 }
 .collapsed-toggle:hover {
-  color: #f8fafc;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  color: #8B0000;
+  background: #F0F0F0;
 }
 .code-shell {
   display: flex;
@@ -156,21 +156,22 @@ function importPython() {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #1e293b;
-  color: #94a3b8;
+  background: #F7F7F7;
+  color: #555555;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.05em;
   flex-shrink: 0;
+  border-bottom: 1px solid #E0E0E0;
 }
 .panel-title {
-  color: #f8fafc;
+  color: #8B0000;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
 }
 .panel-subtitle {
-  color: #64748b;
+  color: #888888;
   font-size: 11px;
   letter-spacing: normal;
   text-transform: none;
@@ -181,8 +182,8 @@ function importPython() {
 }
 .section-shell {
   padding: 12px;
-  border-bottom: 1px solid #1e293b;
-  background: #111827;
+  border-bottom: 1px solid #E0E0E0;
+  background: #FFFFFF;
 }
 .section-shell.output-panel {
   display: flex;
@@ -192,7 +193,7 @@ function importPython() {
 }
 .section-heading {
   margin-bottom: 8px;
-  color: #e2e8f0;
+  color: #1A1A1A;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -202,10 +203,10 @@ function importPython() {
   width: 100%;
   min-height: 140px;
   resize: vertical;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  background: #0f172a;
-  color: #e2e8f0;
+  border: 1px solid #888888;
+  border-radius: 2px;
+  background: #FFFFFF;
+  color: #1A1A1A;
   padding: 10px;
   font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
   font-size: 12px;
@@ -213,7 +214,7 @@ function importPython() {
   outline: none;
 }
 .import-input:focus {
-  border-color: #6366f1;
+  border-color: #8B0000;
 }
 .import-actions {
   display: flex;
@@ -221,19 +222,19 @@ function importPython() {
   margin-top: 8px;
 }
 .copy-btn {
-  background: #334155;
-  color: #cbd5e1;
-  border: none;
-  border-radius: 4px;
+  background: #F7F7F7;
+  color: #555555;
+  border: 1px solid #888888;
+  border-radius: 2px;
   padding: 6px 10px;
   font-size: 11px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.copy-btn:hover { background: #475569; }
-.copy-btn.copied { background: #16a34a; color: #fff; }
+.copy-btn:hover { background: #E0E0E0; }
+.copy-btn.copied { background: #2E8B57; color: #fff; border-color: #2E8B57; }
 .ghost-btn {
-  background: #1f2937;
+  background: #FFFFFF;
 }
 .copy-btn:disabled {
   opacity: 0.45;
@@ -247,13 +248,13 @@ function importPython() {
   line-height: 1.5;
 }
 .import-help {
-  color: #94a3b8;
+  color: #555555;
 }
 .import-error {
-  color: #fca5a5;
+  color: #B22222;
 }
 .import-success {
-  color: #86efac;
+  color: #2E8B57;
 }
 .code-content {
   flex: 1;
@@ -263,11 +264,11 @@ function importPython() {
   font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.7;
-  color: #e2e8f0;
+  color: #1A1A1A;
   white-space: pre;
-  border: 1px solid #1e293b;
-  border-radius: 10px;
-  background: #0b1120;
+  border: 1px solid #888888;
+  border-radius: 2px;
+  background: #F7F7F7;
 }
 :deep(.runtime-target .xterm) {
   padding: 10px;

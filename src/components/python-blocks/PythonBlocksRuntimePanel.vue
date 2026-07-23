@@ -152,12 +152,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .runtime-panel {
   padding: 12px 16px;
-  border-top: 1px solid #cbd5e1;
-  background: linear-gradient(180deg, #eff6ff 0%, #e2e8f0 100%);
+  border-top: 1px solid #888888;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F7F7F7 100%);
   flex-shrink: 0;
 }
 .runtime-panel--expanded {
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
 }
 .runtime-toolbar {
   display: flex;
@@ -166,14 +166,14 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 .runtime-title {
-  color: #0f172a;
+  color: #8B0000;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .runtime-subtitle {
-  color: #475569;
+  color: #555555;
   font-size: 12px;
 }
 .runtime-actions {
@@ -182,10 +182,10 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 .runtime-btn {
-  background: #cbd5e1;
-  color: #1e293b;
-  border: none;
-  border-radius: 8px;
+  background: #FFFFFF;
+  color: #555555;
+  border: 1px solid #888888;
+  border-radius: 2px;
   padding: 7px 12px;
   font-size: 12px;
   font-weight: 700;
@@ -193,15 +193,20 @@ onBeforeUnmount(() => {
   transition: background 0.15s ease, transform 0.15s ease;
 }
 .runtime-btn:hover:not(:disabled) {
-  background: #94a3b8;
+  border-color: #8B0000;
+  color: #8B0000;
+  background: #FFF7F9;
   transform: translateY(-1px);
 }
 .runtime-btn--primary {
-  background: #1d4ed8;
-  color: #eff6ff;
+  background: #8B0000;
+  color: #FFFFFF;
+  border-color: #8B0000;
 }
 .runtime-btn--primary:hover:not(:disabled) {
-  background: #2563eb;
+  background: #A11212;
+  border-color: #A11212;
+  color: #FFFFFF;
 }
 .runtime-btn:disabled {
   opacity: 0.5;
@@ -216,20 +221,20 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 .runtime-help {
-  color: #475569;
+  color: #555555;
 }
 .runtime-error {
-  color: #b91c1c;
+  color: #B22222;
 }
 .runtime-success {
-  color: #166534;
+  color: #2E8B57;
 }
 .runtime-shell {
   margin-top: 10px;
   min-height: 144px;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
-  background: #020617;
+  border: 1px solid #888888;
+  border-radius: 2px;
+  background: #F7F7F7;
   overflow: hidden;
   position: relative;
 }
@@ -241,7 +246,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   padding: 16px;
   text-align: center;
-  color: #64748b;
+  color: #888888;
   font-size: 12px;
   line-height: 1.6;
 }

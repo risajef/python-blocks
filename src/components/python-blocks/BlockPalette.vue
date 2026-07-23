@@ -178,7 +178,8 @@ function updateTooltipPosition(event) {
 .palette {
   width: 216px;
   flex-shrink: 0;
-  background: #1e293b;
+  background: #F7F7F7;
+  border-right: 1px solid #888888;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -188,10 +189,10 @@ function updateTooltipPosition(event) {
   padding: 10px 12px 6px;
   font-weight: 700;
   font-size: 13px;
-  color: #94a3b8;
+  color: #555555;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid #E0E0E0;
   margin-bottom: 4px;
 }
 .palette-badge {
@@ -199,8 +200,8 @@ function updateTooltipPosition(event) {
   margin-left: 8px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: #0f766e;
-  color: #ecfeff;
+  background: #D4AF37;
+  color: #1A1A1A;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -211,7 +212,7 @@ function updateTooltipPosition(event) {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #64748b;
+  color: #888888;
   margin: 6px 0 3px 2px;
 }
 .palette-item {
@@ -229,9 +230,9 @@ function updateTooltipPosition(event) {
 .palette-note {
   margin: 10px 12px 0;
   padding: 10px 12px 0;
-  border-top: 1px solid #334155;
+  border-top: 1px solid #E0E0E0;
   font-size: 11px;
-  color: #94a3b8;
+  color: #555555;
   line-height: 1.5;
 }
 .palette-tooltip {
@@ -239,30 +240,31 @@ function updateTooltipPosition(event) {
   z-index: 80;
   width: min(340px, calc(100vw - 24px));
   padding: 12px;
-  border-radius: 12px;
-  background: rgba(2, 6, 23, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #888888;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
   pointer-events: none;
   backdrop-filter: blur(10px);
 }
 .hint-title {
-  color: #e2e8f0;
+  color: #8B0000;
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 4px;
 }
 .hint-body {
-  color: #94a3b8;
+  color: #555555;
   margin-bottom: 8px;
 }
 .hint-example {
   display: block;
   margin: 0;
   padding: 10px 12px;
-  border-radius: 8px;
-  background: #020617;
-  color: #cbd5e1;
+  border-radius: 2px;
+  background: #F7F7F7;
+  color: #1A1A1A;
+  border: 1px solid #888888;
   font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.6;
