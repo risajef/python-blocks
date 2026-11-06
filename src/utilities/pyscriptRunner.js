@@ -1,11 +1,12 @@
+import { retryableLoader } from './retryable-loader.js'
+
 const PYSCRIPT_VERSION = '0.7.19'
 const PYSCRIPT_BASE_URL = `https://cdn.jsdelivr.net/npm/@pyscript/core@${PYSCRIPT_VERSION}/dist`
 const PYSCRIPT_CORE_URL = `${PYSCRIPT_BASE_URL}/core.js`
 const PYSCRIPT_CSS_URL = `${PYSCRIPT_BASE_URL}/core.css`
 const PYSCRIPT_STYLE_ID = 'python-blocks-pyscript-core-css'
 
-let coreModulePromise = null
-let stylesheetPromise = null
+const loadCore = retryableLoader(() => import(/* @vite-ignore */ PYSCRIPT_CORE_URL))
 
 function ensureBrowserContext() {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -13,39 +14,38 @@ function ensureBrowserContext() {
     }
 }
 
-function ensurePyScriptStylesheet() {
+export const ensurePyScriptStylesheet = retryableLoader(() => {
     ensureBrowserContext()
-
-    if (!stylesheetPromise) {
-        stylesheetPromise = new Promise((resolve, reject) => {
-            const existing = document.getElementById(PYSCRIPT_STYLE_ID)
-            if (existing) {
-                resolve(existing)
-                return
-            }
-
-            const link = document.createElement('link')
-            link.id = PYSCRIPT_STYLE_ID
-            link.rel = 'stylesheet'
-            link.href = PYSCRIPT_CSS_URL
-            link.onload = () => resolve(link)
-            link.onerror = () => reject(new Error('Could not load the PyScript stylesheet.'))
-            document.head.append(link)
-        })
-    }
-
-    return stylesheetPromise
-}
+    return new Promise((resolve, reject) => {
+        const existing = document.getElementById(PYSCRIPT_STYLE_ID)
+        if (existing?.sheet) {
+            resolve(existing)
+            return
+        }
+        const link = existing || document.createElement('link')
+        link.id = PYSCRIPT_STYLE_ID
+        link.rel = 'stylesheet'
+        link.href = PYSCRIPT_CSS_URL
+        const cleanup = () => {
+            link.removeEventListener('load', loaded)
+            link.removeEventListener('error', failed)
+        }
+        const loaded = () => { cleanup(); resolve(link) }
+        const failed = () => {
+            cleanup()
+            link.remove()
+            reject(new Error('Could not load the PyScript stylesheet. Retry Run to try again.'))
+        }
+        link.addEventListener('load', loaded, { once: true })
+        link.addEventListener('error', failed, { once: true })
+        if (!existing) document.head.append(link)
+    })
+})
 
 async function loadCoreModule() {
     ensureBrowserContext()
     await ensurePyScriptStylesheet()
-
-    if (!coreModulePromise) {
-        coreModulePromise = import(/* @vite-ignore */ PYSCRIPT_CORE_URL)
-    }
-
-    return coreModulePromise
+    return loadCore()
 }
 
 // Worker-backed terminals need a cross-origin-isolated context.
