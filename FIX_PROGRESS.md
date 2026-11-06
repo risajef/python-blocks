@@ -9,7 +9,7 @@ Each completed item is a separate commit including its regression checks and thi
 | 1. Literal semantics | Done | Decode simple escapes once; preserve complex/bytes/concatenated/formatted literal source with raw expression fallback. Twelve CPython value/type round trips pass (`npm run test:unit`). |
 | 2. Expression grouping | Done | Group compound comparison/primary operands and preserve tuple arity, including multidimensional slice indices. Eight CPython/manual-block regressions pass. |
 | 3. Match indentation | Done | Cases and case bodies use their correct depths. CPython verifies top-level, nested, guarded, and empty case bodies. |
-| 4. Tree move validation | Pending | |
+| 4. Tree move validation | Done | Validate category, destination, and ancestry before detaching; iterative traversal terminates on corrupt cycles. Rejected moves preserve state in regression tests. |
 | 5. Descendant promotion | Pending | |
 | 6. Positional parent contexts | Pending | |
 | 7. Cancellable execution boundary | Pending | |

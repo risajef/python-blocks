@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { pythonBlocksToPython } from '../utilities/python-blocks-to-python.js'
 import { parsePythonToBlocks } from '../utilities/python-to-blocks.js'
 
+import { subtreeIds } from '../utilities/block-tree.js'
+
 const STORAGE_KEY = 'python-blocks-state'
 
 function loadPersistedState() {
@@ -330,28 +332,14 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
     },
 
     descendants(id) {
-      const b = this.blocks[id]
-      if (!b) return [id]
-      const result = [id]
-      for (const sid of Object.values(b.slots || {})) {
-        if (sid) result.push(...this.descendants(sid))
-      }
-      for (const arr of [b.body, b.elseBody, b.finallyBody, b.args]) {
-        for (const cid of (arr || [])) {
-          if (cid) result.push(...this.descendants(cid))
-        }
-      }
-      for (const handler of (b.exceptHandlers || [])) {
-        for (const cid of handler.body || []) {
-          if (cid) result.push(...this.descendants(cid))
-        }
-      }
-      for (const matchCase of (b.matchCases || [])) {
-        for (const cid of matchCase.body || []) {
-          if (cid) result.push(...this.descendants(cid))
-        }
-      }
-      return result
+      return subtreeIds(this.blocks, id)
+    },
+
+    canMove(blockId, parentId, statement) {
+      const block = this.blocks[blockId]
+      if (!block || !DEFS[block.type] || DEFS[block.type].stmt !== statement) return false
+      if (parentId !== null && !this.blocks[parentId]) return false
+      return parentId === null || !this.descendants(blockId).includes(parentId)
     },
 
     getBodyArray(parentId, bodyKey) {
@@ -423,10 +411,17 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
 
     /** Place a statement block before insertBeforeId (null = end of array). */
     dropInBody(blockId, parentId, bodyKey, insertBeforeId) {
-      if (insertBeforeId === blockId) return
+      if (insertBeforeId === blockId || !this.canMove(blockId, parentId, true)) return false
+      const parent = this.blocks[parentId]
+      const validBody = parentId === null
+        || (bodyKey === 'body' && DEFS[parent.type]?.body)
+        || (bodyKey === 'elseBody' && ['if', 'try'].includes(parent.type))
+        || (bodyKey === 'finallyBody' && parent.type === 'try')
+        || (/^exceptBody:\d+$/.test(bodyKey) && parent.type === 'try')
+        || (/^matchCase:\d+$/.test(bodyKey) && parent.type === 'matchStmt')
+      const arr = validBody && this.getBodyArray(parentId, bodyKey)
+      if (!arr || (insertBeforeId && !arr.includes(insertBeforeId))) return false
       this.detach(blockId)
-      const arr = this.getBodyArray(parentId, bodyKey)
-      if (!arr) return
       const idx = insertBeforeId ? arr.indexOf(insertBeforeId) : -1
       arr.splice(idx === -1 ? arr.length : idx, 0, blockId)
       const b = this.blocks[blockId]
@@ -436,7 +431,8 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
 
     dropInSlot(blockId, parentId, slotName) {
       const parent = this.blocks[parentId]
-      if (!parent) return
+      if (!this.canMove(blockId, parentId, false) || !parent
+          || !Object.hasOwn(parent.slots, slotName)) return false
       const existing = parent.slots[slotName]
       if (existing && existing !== blockId) this.deleteBlock(existing)
       this.detach(blockId)
@@ -448,7 +444,8 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
 
     dropInArg(blockId, parentId, argIdx) {
       const parent = this.blocks[parentId]
-      if (!parent) return
+      if (!this.canMove(blockId, parentId, false) || !parent || !DEFS[parent.type]?.hasArgs
+          || !Number.isInteger(argIdx) || argIdx < 0 || argIdx > parent.args.length) return false
       while (parent.args.length <= argIdx) parent.args.push(null)
       const existing = parent.args[argIdx]
       if (existing && existing !== blockId) this.deleteBlock(existing)
