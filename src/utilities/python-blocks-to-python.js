@@ -179,9 +179,9 @@ function stmtCode(blocks, id, depth) {
       const cases = (b.matchCases || []).map((matchCase) => {
         const guardCode = matchCase.guard ? ` if ${matchCase.guard}` : ''
         const caseBody = matchCase.body?.length
-          ? matchCase.body.map((cid) => stmtCode(blocks, cid, depth + 1)).join('\n')
-          : `${p}    pass`
-        return `${p}case ${matchCase.pattern || '_'}${guardCode}:\n${caseBody}`
+          ? matchCase.body.map((cid) => stmtCode(blocks, cid, depth + 2)).join('\n')
+          : `${p}        pass`
+        return `${p}    case ${matchCase.pattern || '_'}${guardCode}:\n${caseBody}`
       })
       return `${p}match ${e(b.slots.subject)}:\n${cases.join('\n')}`
     }
