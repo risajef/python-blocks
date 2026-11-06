@@ -402,10 +402,14 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       b.parentCtx = null
     },
 
-    deleteBlock(id) {
+    removeSubtree(id) {
       const all = this.descendants(id)
       this.detach(id)
       for (const did of all) delete this.blocks[did]
+    },
+
+    deleteBlock(id) {
+      this.removeSubtree(id)
       this.refresh()
     },
 
@@ -434,8 +438,9 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       if (!this.canMove(blockId, parentId, false) || !parent
           || !Object.hasOwn(parent.slots, slotName)) return false
       const existing = parent.slots[slotName]
-      if (existing && existing !== blockId) this.deleteBlock(existing)
+      // Preserve the incoming subtree before removing the replaced expression.
       this.detach(blockId)
+      if (existing && existing !== blockId) this.removeSubtree(existing)
       parent.slots[slotName] = blockId
       const b = this.blocks[blockId]
       if (b) { b.parentId = parentId; b.parentCtx = `slot:${slotName}` }
@@ -448,8 +453,9 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
           || !Number.isInteger(argIdx) || argIdx < 0 || argIdx > parent.args.length) return false
       while (parent.args.length <= argIdx) parent.args.push(null)
       const existing = parent.args[argIdx]
-      if (existing && existing !== blockId) this.deleteBlock(existing)
+      // Preserve the incoming subtree before removing the replaced expression.
       this.detach(blockId)
+      if (existing && existing !== blockId) this.removeSubtree(existing)
       parent.args[argIdx] = blockId
       const b = this.blocks[blockId]
       if (b) { b.parentId = parentId; b.parentCtx = `arg:${argIdx}` }
