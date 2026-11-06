@@ -99,6 +99,7 @@ function encodeQuotedString(prefix, value, { tripleQuoted = false, raw = false }
 
 function stmtCode(blocks, id, depth) {
   const b = blocks[id]
+  if (!b) throw new Error(`Missing statement block: ${id}`)
   const p = '    '.repeat(depth)
   const body = (arr) =>
     arr && arr.length
@@ -192,7 +193,7 @@ function stmtCode(blocks, id, depth) {
       const header = bases ? `${p}class ${b.name || 'MyClass'}(${bases}):` : `${p}class ${b.name || 'MyClass'}:`
       return `${header}\n${body(b.body)}`
     }
-    case 'return': return `${p}return ${e(b.slots.value)}`
+    case 'return': return `${p}return${b.slots.value ? ` ${e(b.slots.value)}` : ''}`
     case 'yieldStmt': return `${p}${yieldCode(blocks, b)}`
     case 'callStmt': {
       const callee = b.slots?.callee ? groupedExprCode(blocks, b.slots.callee) : (b.name || '???')
@@ -200,7 +201,7 @@ function stmtCode(blocks, id, depth) {
     }
     case 'break': return `${p}break`
     case 'continue': return `${p}continue`
-    default: return `${p}# ???`
+    default: throw new Error(`Unknown statement type: ${b.type}`)
   }
 }
 
@@ -223,7 +224,7 @@ function subscriptIndexCode(blocks, id) {
 function exprCode(blocks, id) {
   if (!id) return '___'
   const b = blocks[id]
-  if (!b) return '___'
+  if (!b) throw new Error(`Missing expression block: ${id}`)
   const e = (sid) => exprCode(blocks, sid)
   switch (b.type) {
     case 'var': return b.value || '_'
@@ -269,6 +270,6 @@ function exprCode(blocks, id) {
     }
     case 'lambda': return `lambda ${(b.params || []).join(', ')}: ${e(b.slots.value)}`
     case 'rawExpr': return b.value || '___'
-    default: return '???'
+    default: throw new Error(`Unknown expression type: ${b.type}`)
   }
 }

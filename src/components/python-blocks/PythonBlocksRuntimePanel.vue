@@ -14,7 +14,7 @@
         >
           {{ isShellOpen ? 'Hide output' : 'Show output' }}
         </button>
-        <button class="runtime-btn runtime-btn--primary" data-testid="python-blocks-run-browser" :disabled="running" @click="runInBrowser">
+        <button class="runtime-btn runtime-btn--primary" data-testid="python-blocks-run-browser" :disabled="running || store.diagnostics.length > 0" @click="runInBrowser">
           {{ running ? 'Running…' : runtimeReady ? 'Run with PyScript' : 'Load PyScript + run' }}
         </button>
         <button class="runtime-btn" :disabled="!runtimeReady || running" @click="clearRuntimeOutput">
@@ -28,6 +28,10 @@
 
     <p class="runtime-help">
       Runs in a terminable worker and requires cross-origin isolation. Only run code you trust: browser execution retains this origin’s network and storage permissions.
+    </p>
+    <p v-if="store.diagnostics.length" class="runtime-error" role="status">
+      {{ store.diagnostics[0].message }}
+      <span v-if="store.diagnostics.length > 1">({{ store.diagnostics.length }} issues)</span>
     </p>
     <p v-if="runtimeError" class="runtime-error">{{ runtimeError }}</p>
     <p v-else-if="runtimeStatus" class="runtime-success">{{ runtimeStatus }}</p>
@@ -61,7 +65,8 @@ let uiGeneration = 0
 const session = createRuntimeSession(() => createPyScriptRunner({ terminal: `#${runtimeTargetId}` }))
 
 async function runInBrowser() {
-  if (running.value) return
+  if (running.value || store.diagnostics.length) return
+  store.refresh()
   const token = ++uiGeneration
   const source = store.pythonCode
   running.value = true

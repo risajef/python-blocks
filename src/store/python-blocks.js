@@ -3,6 +3,7 @@ import { pythonBlocksToPython } from '../utilities/python-blocks-to-python.js'
 import { parsePythonToBlocks } from '../utilities/python-to-blocks.js'
 
 import { childEdges, subtreeIds } from '../utilities/block-tree.js'
+import { documentDiagnostics } from '../utilities/document-diagnostics.js'
 import { readSession, writeSession } from '../utilities/session-storage.js'
 import { validateDocument, validateDescriptors, documentSnapshot, MAX_SOURCE_LENGTH, MAX_SNAPSHOT_LENGTH } from '../utilities/document-validation.js'
 
@@ -309,6 +310,10 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
     }
   },
 
+  getters: {
+    diagnostics: state => documentDiagnostics(state, DEFS),
+  },
+
   actions: {
     schedulePersistence() {
       if (typeof window === 'undefined') return
@@ -331,9 +336,14 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
     },
 
     refresh() {
-      normalizeStringBlocks(this.blocks)
-      this.pythonCode = pythonBlocksToPython(this.blocks, this.rootBody)
-      this.schedulePersistence()
+      try {
+        validateDocument(documentSnapshot(this.$state), DEFS)
+        normalizeStringBlocks(this.blocks)
+        this.pythonCode = pythonBlocksToPython(this.blocks, this.rootBody)
+        this.schedulePersistence()
+      } catch {
+        this.pythonCode = '# Invalid document: repair block references before running.'
+      }
     },
 
     descendants(id) {

@@ -18,6 +18,7 @@ Each completed item is a separate commit including its regression checks and thi
 | 10. Persistence resilience | Done | Guard all storage access, validate/version snapshots, derive restored Python, debounce writes with pagehide flush, bound imports, and commit imported documents atomically. Denied/quota/corruption/oversize regressions pass. |
 | Loader retries | Done | Share concurrent loads, discard rejected promises, remove failed stylesheet nodes, and retry failed stylesheet/module loading. Retry and concurrency tests pass. |
 | Source logging | Done | Full pasted-source diagnostics require explicit `parsePythonToBlocks(source, { debug: true })`; normal failures log no source. Opt-in/opt-out tests pass. |
-| Remaining additional concerns | Pending | Diagnostics, dependencies, deployment assumptions, stale artifacts, and CI. |
+| Document diagnostics | Done | Structured diagnostics identify missing slots and invalid references/types; Run is blocked for incomplete/corrupt documents. Refresh validates before generating and unknown nodes fail explicitly. Regression tests pass. |
+| Remaining additional concerns | Pending | Dependencies, deployment assumptions, stale artifacts, and CI. |
 
 Unit tests use Node's built-in runner and installed CPython (`python3`) for semantic comparisons. Browser checks and locked-toolchain validation will be recorded separately; neither is implied by passing Node tests.
