@@ -15,7 +15,7 @@ Each completed item is a separate commit including its regression checks and thi
 | 7. Cancellable execution boundary | Done | Removed unsafe main-thread fallback; require worker/isolation before CDN loading. Reset terminates the worker; local dev/preview send isolation headers. Adapter and unsupported-environment tests pass. Production headers/dedicated-origin hosting need a later deployment change; parent site remains untouched. |
 | 8. Unsupported syntax preservation | Done | Preserve async constructs, return annotations, complex parameter signatures, and unsupported mapped statements as whole raw statements. CPython verifies coroutine identity, annotations, defaults, variadics, and loop-else behavior. |
 | 9. Runtime lifecycle | Done | Keep the output target mounted, retire asynchronous generations on reset/unmount, kill late initialization, capture run source, and disable clear during execution. Deferred-promise lifecycle tests pass. |
-| 10. Persistence resilience | Pending | |
+| 10. Persistence resilience | Done | Guard all storage access, validate/version snapshots, derive restored Python, debounce writes with pagehide flush, bound imports, and commit imported documents atomically. Denied/quota/corruption/oversize regressions pass. |
 | Additional review concerns | Pending | Loader retries, source logging, diagnostics, dependencies, deployment assumptions, stale artifacts, and CI. |
 
 Unit tests use Node's built-in runner and installed CPython (`python3`) for semantic comparisons. Browser checks and locked-toolchain validation will be recorded separately; neither is implied by passing Node tests.

@@ -65,6 +65,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { readSession, writeSession } from '../../utilities/session-storage.js'
 import { usePythonBlocksStore } from '../../store/python-blocks.js'
 
 const PANEL_STATE_KEY = 'python-blocks-code-panel-collapsed'
@@ -77,14 +78,14 @@ const importSuccess = ref('')
 const isCollapsed = ref(loadPanelState())
 
 function loadPanelState() {
-  if (typeof window === 'undefined') return true
-  const persisted = window.sessionStorage.getItem(PANEL_STATE_KEY)
-  return persisted === null ? true : persisted === 'true'
+  const { value, error } = readSession(PANEL_STATE_KEY)
+  if (error) store.persistenceError = error
+  return value === null ? true : value === 'true'
 }
 
 function persistPanelState() {
-  if (typeof window === 'undefined') return
-  window.sessionStorage.setItem(PANEL_STATE_KEY, String(isCollapsed.value))
+  const error = writeSession(PANEL_STATE_KEY, String(isCollapsed.value))
+  if (error) store.persistenceError = error
 }
 
 function togglePanel() {

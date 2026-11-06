@@ -3,43 +3,28 @@ import { pythonBlocksToPython } from '../utilities/python-blocks-to-python.js'
 import { parsePythonToBlocks } from '../utilities/python-to-blocks.js'
 
 import { childEdges, subtreeIds } from '../utilities/block-tree.js'
+import { readSession, writeSession } from '../utilities/session-storage.js'
+import { validateDocument, validateDescriptors, documentSnapshot, MAX_SOURCE_LENGTH, MAX_SNAPSHOT_LENGTH } from '../utilities/document-validation.js'
 
 const STORAGE_KEY = 'python-blocks-state'
 
+const persistenceTimers = new WeakMap()
+
 function loadPersistedState() {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  const raw = window.sessionStorage.getItem(STORAGE_KEY)
-  if (!raw) {
-    return null
-  }
-
+  const { value, error } = readSession(STORAGE_KEY)
+  if (!value) return { snapshot: null, error }
   try {
-    const parsed = JSON.parse(raw)
-    const normalized = normalizePythonBlocksState(parsed)
-    if (normalized !== parsed) {
-      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(normalized))
-    }
-    return normalized
+    if (value.length > MAX_SNAPSHOT_LENGTH) throw new Error('Snapshot too large')
+    const parsed = JSON.parse(value)
+    if (parsed.schemaVersion !== undefined && parsed.schemaVersion !== 1) throw new Error('Unknown version')
+    const snapshot = normalizePythonBlocksState(parsed)
+    validateDocument(snapshot, DEFS)
+    if (typeof snapshot.simpleMode !== 'boolean') throw new Error('Invalid settings')
+    snapshot.pythonCode = pythonBlocksToPython(snapshot.blocks, snapshot.rootBody)
+    return { snapshot, error: '' }
   } catch {
-    window.sessionStorage.removeItem(STORAGE_KEY)
-    return null
+    return { snapshot: null, error: 'The saved session is invalid or too large and was not restored. You can start a new program.' }
   }
-}
-
-function persistState(state) {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-    blocks: state.blocks,
-    rootBody: state.rootBody,
-    pythonCode: state.pythonCode,
-    simpleMode: state.simpleMode,
-  }))
 }
 
 function normalizePythonBlocksState(state) {
@@ -67,7 +52,6 @@ function normalizePythonBlocksState(state) {
     ? {
       ...state,
       blocks,
-      pythonCode: pythonBlocksToPython(blocks, state.rootBody ?? []),
     }
     : state
 }
@@ -314,9 +298,10 @@ export function makeBlock(type) {
 
 export const usePythonBlocksStore = defineStore('python-blocks', {
   state: () => {
-    const persisted = loadPersistedState()
+    const { snapshot: persisted, error } = loadPersistedState()
 
     return {
+      persistenceError: error,
       blocks: persisted?.blocks ?? {},
       rootBody: persisted?.rootBody ?? [],
       pythonCode: persisted?.pythonCode ?? '# Empty program\n# Drag blocks onto the canvas',
@@ -325,10 +310,30 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
   },
 
   actions: {
+    schedulePersistence() {
+      if (typeof window === 'undefined') return
+      clearTimeout(persistenceTimers.get(this))
+      persistenceTimers.set(this, setTimeout(() => this.flushPersistence(), 200))
+    },
+
+    flushPersistence() {
+      clearTimeout(persistenceTimers.get(this))
+      persistenceTimers.delete(this)
+      try {
+        const snapshot = documentSnapshot(this.$state)
+        validateDocument(snapshot, DEFS)
+        const serialized = JSON.stringify(snapshot)
+        if (serialized.length > MAX_SNAPSHOT_LENGTH) throw new Error('Snapshot too large')
+        this.persistenceError = writeSession(STORAGE_KEY, serialized)
+      } catch {
+        this.persistenceError = 'This program could not be saved. Copy your Python before closing the page.'
+      }
+    },
+
     refresh() {
       normalizeStringBlocks(this.blocks)
       this.pythonCode = pythonBlocksToPython(this.blocks, this.rootBody)
-      persistState(this.$state)
+      this.schedulePersistence()
     },
 
     descendants(id) {
@@ -576,13 +581,13 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
     createBlock(type) {
       const block = makeBlock(type)
       this.blocks[block.id] = block
-      persistState(this.$state)
+      this.schedulePersistence()
       return block.id
     },
 
     setSimpleMode(enabled) {
       this.simpleMode = Boolean(enabled)
-      persistState(this.$state)
+      this.schedulePersistence()
     },
 
     clearAll() {
@@ -592,16 +597,21 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
     },
 
     importPythonCode(source) {
-      const descriptors = parsePythonToBlocks(source)
-      this.blocks = {}
-      this.rootBody = []
-
-      for (const descriptor of descriptors) {
-        const rootId = instantiateImportedBlock(this, descriptor, null, 'root')
-        this.rootBody.push(rootId)
+      if (typeof source !== 'string' || source.length > MAX_SOURCE_LENGTH) {
+        throw new Error(`Python import is limited to ${MAX_SOURCE_LENGTH} characters.`)
       }
-
-      this.refresh()
+      const descriptors = parsePythonToBlocks(source)
+      validateDescriptors(descriptors)
+      const draft = { blocks: {}, rootBody: [] }
+      for (const descriptor of descriptors) {
+        draft.rootBody.push(instantiateImportedBlock(draft, descriptor, null, 'root'))
+      }
+      validateDocument(draft, DEFS)
+      const code = pythonBlocksToPython(draft.blocks, draft.rootBody)
+      this.blocks = draft.blocks
+      this.rootBody = draft.rootBody
+      this.pythonCode = code
+      this.schedulePersistence()
       return this.rootBody
     },
   },

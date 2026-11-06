@@ -19,6 +19,8 @@
       </div>
     </header>
 
+    <p v-if="store.persistenceError" role="status">{{ store.persistenceError }}</p>
+
     <!-- 3-column body -->
     <div class="sb-body">
       <BlockPalette />
@@ -111,10 +113,13 @@ const SEARCH_ALIASES = {
 onMounted(() => {
   nextTick(() => focusFirstSelectable())
   window.addEventListener('resize', updateZoneSelectorPosition)
+  window.addEventListener('pagehide', store.flushPersistence)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateZoneSelectorPosition)
+  window.removeEventListener('pagehide', store.flushPersistence)
+  store.flushPersistence()
 })
 
 watch(() => store.pythonCode, async () => {

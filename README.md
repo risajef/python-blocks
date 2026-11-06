@@ -115,11 +115,10 @@ The bottom dock runs the generated Python in the browser.
 The editor stores its state in `sessionStorage` , including:
 
 * Blocks on the canvas.
-* Generated Python.
 * Simple mode state.
 * Nerd mode collapsed/open state.
 
-This persistence is session-scoped rather than long-term project storage.
+This persistence is session-scoped rather than long-term project storage. Snapshots are versioned and validated; generated Python is rebuilt from the document when restoring. Writes are debounced and flushed on page exit. Storage failures appear in the editor and do not prevent editing. Imports are limited to 200,000 characters, 5,000 blocks, and 100 levels of nesting; rejected imports leave the current canvas intact.
 
 ## Development
 
