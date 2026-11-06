@@ -21,13 +21,13 @@
           Clear output
         </button>
         <button class="runtime-btn" :disabled="!runtimeReady" @click="resetRuntime">
-          Reset runtime
+          {{ running ? 'Stop / reset runtime' : 'Reset runtime' }}
         </button>
       </div>
     </div>
 
     <p class="runtime-help">
-      Uses a worker when the page is cross-origin-isolated. Otherwise it falls back to main-thread mode, where input() opens a browser prompt.
+      Runs in a terminable worker and requires cross-origin isolation. Only run code you trust: browser execution retains this origin’s network and storage permissions.
     </p>
     <p v-if="runtimeError" class="runtime-error">{{ runtimeError }}</p>
     <p v-else-if="runtimeStatus" class="runtime-success">{{ runtimeStatus }}</p>
@@ -70,9 +70,7 @@ async function ensureRunner() {
       .then((instance) => {
         runner = instance
         runtimeReady.value = true
-        runtimeStatus.value = instance.mode === 'main-thread'
-          ? 'PyScript ready (main-thread mode: input() uses browser prompt).'
-          : 'PyScript ready.'
+        runtimeStatus.value = 'PyScript ready (worker mode).'
         return instance
       })
       .catch((error) => {

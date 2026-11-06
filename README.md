@@ -106,7 +106,9 @@ The bottom dock runs the generated Python in the browser.
 * Output stays hidden until execution begins.
 * `Clear output` collapses the terminal again.
 * `Reset runtime` fully recreates the PyScript session.
-* When cross-origin isolation is unavailable, execution falls back to main-thread mode and `input()` uses the browser prompt.
+* Execution requires a worker, `SharedArrayBuffer`, and cross-origin isolation. Main-thread execution is disabled. Use **Stop / reset runtime** to terminate a running program.
+* Vite dev/preview supply COOP/COEP headers. Production hosting must supply `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` too; an embedding page must permit isolation. Without those headers, editing/import/export still work and Run explains the requirement.
+* Run only trusted programs. A worker protects responsiveness; it is not a security sandbox for arbitrary code. Deploy untrusted-code execution on a dedicated origin with restricted authority.
 
 ## Persistence
 
