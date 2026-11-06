@@ -8,7 +8,7 @@ export class PythonImportError extends Error {
   }
 }
 
-export function parsePythonToBlocks(source) {
+export function parsePythonToBlocks(source, { debug = false } = {}) {
   const normalizedSource = normalizeSource(source)
   let tree = null
 
@@ -18,7 +18,7 @@ export function parsePythonToBlocks(source) {
     throwOnParseErrors(tree, normalizedSource)
     return mapBody(tree.topNode, normalizedSource)
   } catch (error) {
-    logImportDiagnostics(error, {
+    if (debug) logImportDiagnostics(error, {
       source,
       normalizedSource,
       tree,
