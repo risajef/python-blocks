@@ -61,7 +61,8 @@ export function createWorkerRunner(donkey, options) {
     }).then((runner) => ({
         mode: 'worker',
         reset: (...args) => runner.reset(...args),
-        process: (...args) => runner.process(...args),
+        // donkey.process feeds terminal input; execute runs a complete program.
+        process: (...args) => runner.execute(...args),
         clear: (...args) => runner.clear(...args),
         kill: (...args) => runner.kill(...args),
     }))

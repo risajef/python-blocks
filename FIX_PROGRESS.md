@@ -23,6 +23,7 @@ Each completed item is a separate commit including its regression checks and thi
 | Deployment assumptions | Done | Relative asset base/favicon, hash routing, local styles, and accurate application title make the source build self-contained at static-host subpaths. Production-header requirements are documented; parent integration unchanged. |
 | Stale artifacts | Done | Removed the broken tracked deployment entry and duplicate generated icon; builds now target ignored `dist/`. The source entry/public icon are authoritative. Parent build continues supplying its own output directory. |
 | Dependency advisories | Done | A clean install exposed eight advisory entries. Compatible lockfile updates (including Vue 3.5.45, Vite 8.3.6, and PostCSS 8.5.32) report zero npm audit vulnerabilities. Unit regressions and the locked-toolchain production build pass. |
+| Worker program API | Done | The live smoke test revealed `donkey.process` feeds terminal stdin rather than executing a program. The adapter now calls `execute` for complete programs; regression verifies the correct API. Live verification follows below. |
 | Remaining additional concerns | Pending | CI and final browser verification. |
 
 Unit tests use Node's built-in runner and installed CPython (`python3`) for semantic comparisons. Browser checks and locked-toolchain validation will be recorded separately; neither is implied by passing Node tests.
