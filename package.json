@@ -13,16 +13,7 @@
     "test:unit": "node --test tests/unit/*.test.js"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.1.1",
-    "@fortawesome/free-brands-svg-icons": "^6.1.1",
-    "@fortawesome/free-regular-svg-icons": "^6.1.1",
-    "@fortawesome/free-solid-svg-icons": "^6.1.1",
-    "@fortawesome/vue-fontawesome": "^3.0.1",
     "@lezer/python": "^1.1.18",
-    "bootstrap-icons-vue": "^1.8.1",
-    "drawflow": "^0.0.59",
-    "i": "^0.3.7",
-    "mitt": "^3.0.0",
     "pinia": "^2.0.16",
     "vue": "^3.2.37",
     "vue-router": "^4.1.2"

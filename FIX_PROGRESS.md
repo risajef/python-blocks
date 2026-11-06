@@ -19,6 +19,7 @@ Each completed item is a separate commit including its regression checks and thi
 | Loader retries | Done | Share concurrent loads, discard rejected promises, remove failed stylesheet nodes, and retry failed stylesheet/module loading. Retry and concurrency tests pass. |
 | Source logging | Done | Full pasted-source diagnostics require explicit `parsePythonToBlocks(source, { debug: true })`; normal failures log no source. Opt-in/opt-out tests pass. |
 | Document diagnostics | Done | Structured diagnostics identify missing slots and invalid references/types; Run is blocked for incomplete/corrupt documents. Refresh validates before generating and unknown nodes fail explicitly. Regression tests pass. |
-| Remaining additional concerns | Pending | Dependencies, deployment assumptions, stale artifacts, and CI. |
+| Unused dependencies | Done | Removed nine unused direct dependencies and pruned the lockfile with npm offline. Source imports no longer depend on those packages. Clean-install verification is recorded below. |
+| Remaining additional concerns | Pending | Deployment assumptions, stale artifacts, and CI. |
 
 Unit tests use Node's built-in runner and installed CPython (`python3`) for semantic comparisons. Browser checks and locked-toolchain validation will be recorded separately; neither is implied by passing Node tests.
