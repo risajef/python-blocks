@@ -17,10 +17,10 @@
         <button class="runtime-btn runtime-btn--primary" data-testid="python-blocks-run-browser" :disabled="running" @click="runInBrowser">
           {{ running ? 'Running…' : runtimeReady ? 'Run with PyScript' : 'Load PyScript + run' }}
         </button>
-        <button class="runtime-btn" :disabled="!runtimeReady" @click="clearRuntimeOutput">
+        <button class="runtime-btn" :disabled="!runtimeReady || running" @click="clearRuntimeOutput">
           Clear output
         </button>
-        <button class="runtime-btn" :disabled="!runtimeReady" @click="resetRuntime">
+        <button class="runtime-btn" :disabled="!runtimeReady && !running" @click="resetRuntime">
           {{ running ? 'Stop / reset runtime' : 'Reset runtime' }}
         </button>
       </div>
@@ -32,7 +32,7 @@
     <p v-if="runtimeError" class="runtime-error">{{ runtimeError }}</p>
     <p v-else-if="runtimeStatus" class="runtime-success">{{ runtimeStatus }}</p>
 
-    <div v-if="isShellOpen" class="runtime-shell" data-testid="python-blocks-runtime-output">
+    <div v-show="isShellOpen" class="runtime-shell" data-testid="python-blocks-runtime-output">
       <div v-if="!hasRuntimeSession" class="runtime-placeholder">
         Click “Run with PyScript” to execute the generated Python here.
       </div>
@@ -45,6 +45,7 @@
 import { onBeforeUnmount, ref } from 'vue'
 import { usePythonBlocksStore } from '../../store/python-blocks.js'
 import { createPyScriptRunner } from '../../utilities/pyscriptRunner.js'
+import { createRuntimeSession } from '../../utilities/runtime-session.js'
 
 const runtimeTargetId = 'python-blocks-pyscript-terminal'
 
@@ -56,37 +57,13 @@ const running = ref(false)
 const hasRuntimeSession = ref(false)
 const isShellOpen = ref(false)
 
-let runner = null
-let runnerPromise = null
-
-async function ensureRunner() {
-  if (runner) return runner
-
-  if (!runnerPromise) {
-    runtimeError.value = ''
-    runtimeStatus.value = 'Loading PyScript runtime...'
-    hasRuntimeSession.value = true
-    runnerPromise = createPyScriptRunner({ terminal: `#${runtimeTargetId}` })
-      .then((instance) => {
-        runner = instance
-        runtimeReady.value = true
-        runtimeStatus.value = 'PyScript ready (worker mode).'
-        return instance
-      })
-      .catch((error) => {
-        runnerPromise = null
-        runtimeReady.value = false
-        hasRuntimeSession.value = false
-        runtimeStatus.value = ''
-        runtimeError.value = error instanceof Error ? error.message : 'Could not load PyScript.'
-        throw error
-      })
-  }
-
-  return runnerPromise
-}
+let uiGeneration = 0
+const session = createRuntimeSession(() => createPyScriptRunner({ terminal: `#${runtimeTargetId}` }))
 
 async function runInBrowser() {
+  if (running.value) return
+  const token = ++uiGeneration
+  const source = store.pythonCode
   running.value = true
   runtimeError.value = ''
   runtimeStatus.value = 'Loading PyScript runtime...'
@@ -94,56 +71,49 @@ async function runInBrowser() {
   isShellOpen.value = true
 
   try {
-    const pyRunner = await ensureRunner()
-    runtimeStatus.value = 'Running Python in the browser...'
-    await pyRunner.reset()
-    await pyRunner.process(store.pythonCode)
-    runtimeStatus.value = 'Execution finished.'
+    const completed = await session.run(source, () => {
+      runtimeReady.value = true
+      runtimeStatus.value = 'Running Python in the browser...'
+    })
+    if (completed && token === uiGeneration) runtimeStatus.value = 'Execution finished.'
   } catch (error) {
+    if (token !== uiGeneration) return
     runtimeStatus.value = ''
     runtimeError.value = error instanceof Error ? error.message : 'PyScript execution failed.'
   } finally {
-    running.value = false
+    if (token === uiGeneration) running.value = false
   }
 }
 
 async function clearRuntimeOutput() {
-  runtimeError.value = ''
-  runtimeStatus.value = 'Output cleared.'
-  if (runner) {
-    await runner.clear()
-  }
-  hasRuntimeSession.value = false
-  isShellOpen.value = false
-}
-
-function wipeRuntimeTarget() {
-  if (typeof document === 'undefined') return
-  const target = document.getElementById(runtimeTargetId)
-  if (target) {
-    target.innerHTML = ''
+  if (running.value) return
+  const token = uiGeneration
+  try {
+    if (!await session.clear() || token !== uiGeneration) return
+    runtimeError.value = ''
+    runtimeStatus.value = 'Output cleared.'
+    hasRuntimeSession.value = false
+    isShellOpen.value = false
+  } catch (error) {
+    if (token === uiGeneration) runtimeError.value = error.message
   }
 }
 
-async function resetRuntime() {
+function resetRuntime() {
+  uiGeneration += 1
+  session.reset()
   runtimeError.value = ''
   runtimeStatus.value = 'PyScript runtime reset.'
-  if (runner) {
-    runner.kill()
-    runner = null
-  }
-  runnerPromise = null
   runtimeReady.value = false
+  running.value = false
   hasRuntimeSession.value = false
   isShellOpen.value = false
-  wipeRuntimeTarget()
+  document.getElementById(runtimeTargetId)?.replaceChildren()
 }
 
 onBeforeUnmount(() => {
-  if (runner) {
-    runner.kill()
-    runner = null
-  }
+  uiGeneration += 1
+  session.dispose()
 })
 </script>
 
