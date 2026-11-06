@@ -454,9 +454,8 @@ test.describe('Python import parser', () => {
       },
     })
     expect(result[0].args[0]).toMatchObject({
-      type: 'formatStr',
-      value: 'Mean IoU: {mean_iou:.4f}\\n',
-      tripleQuoted: false,
+      type: 'rawExpr',
+      value: 'f"Mean IoU: {mean_iou:.4f}\\n"',
     })
   })
 

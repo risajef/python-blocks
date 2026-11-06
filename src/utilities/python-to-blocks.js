@@ -973,7 +973,14 @@ function mapRawExpression(node, source) {
 }
 
 function mapStringExpression(node, source) {
-  const literal = parseStringLiteral(source.slice(node.from, node.to))
+  const token = source.slice(node.from, node.to)
+  const literal = parseStringLiteral(token)
+  // Keep tokens we cannot decode exactly, including implicit concatenation.
+  if (node.name === 'ContinuedString' || literal.prefix.includes('b')
+      || (!literal.raw && literal.value === null)
+      || (literal.raw && /[\"']/.test(literal.rawValue))) {
+    return mapRawExpression(node, source)
+  }
   if (literal.raw) {
     return {
       type: 'rawStr',
@@ -989,6 +996,10 @@ function mapStringExpression(node, source) {
 
 function mapFormatStringExpression(node, source) {
   const literal = parseStringLiteral(source.slice(node.from, node.to))
+  // Interpolation and escaped content are Python source, not decoded JS text.
+  if (literal.prefix.includes('r') || /[\\"']/.test(literal.rawValue)) {
+    return mapRawExpression(node, source)
+  }
   return {
     type: 'formatStr',
     value: literal.rawValue,
@@ -1627,13 +1638,19 @@ function decodeStringValue(raw) {
 }
 
 function decodeEscapedStringValue(inner) {
-  return inner
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\r')
-    .replace(/\\t/g, '\t')
-    .replace(/\\"/g, '"')
-    .replace(/\\'/g, "'")
-    .replace(/\\\\/g, '\\')
+  const escapes = { n: '\n', r: '\r', t: '\t', '\\': '\\', '"': '"', "'": "'" }
+  let result = ''
+  for (let index = 0; index < inner.length; index += 1) {
+    const char = inner[index]
+    if (char !== '\\') {
+      result += char
+      continue
+    }
+    const escaped = inner[++index]
+    if (!Object.hasOwn(escapes, escaped)) return null
+    result += escapes[escaped]
+  }
+  return result
 }
 
 function isTripleQuoted(raw) {
