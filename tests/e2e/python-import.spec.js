@@ -487,7 +487,7 @@ test.describe('Python import parser', () => {
   })
 
   test('accepts valid quote-only triple strings', () => {
-    const result = parseWithContext('print(""""""")')
+    const result = parseWithContext(`print('''"''')`)
 
     expect(result).toHaveLength(1)
     expect(result[0]).toMatchObject({

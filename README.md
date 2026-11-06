@@ -148,7 +148,7 @@ npx playwright test tests/e2e/python-blocks.spec.js
 npm run build
 ```
 
-Playwright uses Chrome, so a local Chrome installation is expected.
+Install the test browser with `npx playwright install chromium`. Browser tests use Playwright Chromium; `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing compatible binary. Run `npm test` for Node/CPython regressions and importer tests without a browser. `npm run build && npm run test:e2e` covers the editor, mocked runtime lifecycle, and a built app at a static subpath. `npm run test:runtime` is a separate integration smoke check using the real PyScript CDN and Python worker; it needs internet access. CI runs the deterministic suite with Node 24 and Python 3.12.
 
 ## Stack
 

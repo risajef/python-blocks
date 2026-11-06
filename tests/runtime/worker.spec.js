@@ -1,0 +1,32 @@
+import { test, expect } from '@playwright/test'
+
+test('real PyScript worker executes, clears, reruns, and terminates an infinite loop', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.python-blocks-board')).toBeVisible()
+  expect(await page.evaluate(() => window.crossOriginIsolated)).toBe(true)
+  const importCode = async source => page.evaluate(code => {
+    document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('python-blocks').importPythonCode(code)
+  }, source)
+  await importCode('print(42)')
+  await page.getByTestId('python-blocks-run-browser').click()
+  await expect(page.locator('.runtime-success')).toContainText('Execution finished', { timeout: 60_000 })
+  await expect(page.locator('.runtime-target')).toContainText('42')
+  await page.getByRole('button', { name: 'Clear output' }).click()
+  await importCode('print(7)')
+  await page.getByTestId('python-blocks-run-browser').click()
+  await expect(page.locator('.runtime-success')).toContainText('Execution finished', { timeout: 20_000 })
+  await expect(page.locator('.runtime-target')).toContainText('7')
+  await importCode('while True:\n    pass')
+  await page.getByTestId('python-blocks-run-browser').click()
+  await expect(page.locator('.runtime-success')).toContainText('Running Python in the browser')
+  // Allow the worker to enter the loop before asking the UI to terminate it.
+  await page.waitForTimeout(250)
+  await expect(page.getByRole('button', { name: 'Stop / reset runtime' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Stop / reset runtime' }).click()
+  await expect(page.locator('.runtime-success')).toContainText('runtime reset')
+  await expect(page.getByTestId('python-blocks-run-browser')).toBeEnabled()
+  await importCode('print(42)')
+  await page.getByTestId('python-blocks-run-browser').click()
+  await expect(page.locator('.runtime-success')).toContainText('Execution finished', { timeout: 20_000 })
+  await expect(page.locator('.runtime-target')).toContainText('42')
+})

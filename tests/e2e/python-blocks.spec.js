@@ -12,6 +12,27 @@ function readWorkspacePythonFile(relativePath) {
   return fs.readFileSync(new URL(`../../${relativePath}`, import.meta.url), 'utf8')
 }
 
+async function mockRuntime(page) {
+  await page.route('**/src/utilities/pyscriptRunner.js*', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: `export async function createPyScriptRunner(options) {
+      const target = document.querySelector(options.terminal);
+      let cancel;
+      window.__runtimeCreated = (window.__runtimeCreated || 0) + 1;
+      return {
+        mode: 'worker',
+        async reset() {},
+        async process(code) {
+          if (code.includes('while True')) await new Promise(resolve => { cancel = resolve });
+          else target.textContent = code.includes('42') ? '42' : '7';
+        },
+        async clear() { target.textContent = ''; },
+        kill() { window.__runtimeKilled = (window.__runtimeKilled || 0) + 1; cancel?.(); }
+      };
+    }`,
+  }))
+}
+
 async function openNerdMode(page) {
   await page.getByTestId('python-blocks-advanced-toggle').click()
   await expect(page.locator('.code-content')).toBeVisible()
@@ -20,8 +41,8 @@ async function openNerdMode(page) {
 test.describe('Python Blocks Editor – UI structure', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/python-blocks')
-    // Wait for Vue to mount
     await page.waitForSelector('.python-blocks-board', { timeout: 8000 })
+    await callStoreAction(page, 'python-blocks', 'setSimpleMode', false)
   })
 
   test('palette, canvas, and nerd rail render', async ({ page }) => {
@@ -31,14 +52,12 @@ test.describe('Python Blocks Editor – UI structure', () => {
     await expect(page.locator('.code-content')).not.toBeVisible()
   })
 
-  test('header title is visible with back link', async ({ page }) => {
+  test('header title is visible', async ({ page }) => {
     await expect(page.locator('.sb-title')).toContainText('Python Blocks Editor')
-    await expect(page.locator('.back-link')).toBeVisible()
   })
 
-  test('back link navigates home', async ({ page }) => {
-    await page.locator('.back-link').click()
-    await expect(page).toHaveURL('/')
+  test('clear canvas is available in the header', async ({ page }) => {
+    await expect(page.locator('.sb-header .clear-btn')).toBeVisible()
   })
 
   test('palette section headers are visible', async ({ page }) => {
@@ -189,13 +208,16 @@ test.describe('Python Blocks Editor – UI structure', () => {
     })
 
     expect(layout.runtimeIsLastChild).toBe(true)
-    await expect(page.getByTestId('python-blocks-runtime-output')).toHaveCount(0)
+    await expect(page.getByTestId('python-blocks-runtime-output')).not.toBeVisible()
   })
 
   test('browser run executes generated Python in the runtime panel', async ({ page }) => {
+    await mockRuntime(page)
+    await page.reload()
+    await page.waitForSelector('.python-blocks-board')
     await page.evaluate(() => {
       const store = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('python-blocks')
-      store.pythonCode = 'print(42)'
+      store.importPythonCode('print(42)')
     })
 
     await page.getByTestId('python-blocks-run-browser').click()
@@ -205,28 +227,20 @@ test.describe('Python Blocks Editor – UI structure', () => {
     await expect(page.locator('.runtime-target')).toContainText('42', { timeout: 20000 })
   })
 
-  test('browser run supports input() in main-thread fallback mode', async ({ page }) => {
-    await page.evaluate(() => {
-      const store = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('python-blocks')
-      store.pythonCode = 'name = input("What is your name?")\nprint(f"Hello {name}")'
-    })
-
-    const dialogPromise = page.waitForEvent('dialog')
+  test('browser run refuses unsafe main-thread fallback', async ({ page }) => {
+    await page.evaluate(() => Object.defineProperty(window, 'crossOriginIsolated', { value: false, configurable: true }))
+    await callStoreAction(page, 'python-blocks', 'importPythonCode', 'print(42)')
     await page.getByTestId('python-blocks-run-browser').click()
-
-    const dialog = await dialogPromise
-    expect(dialog.message()).toBe('What is your name?')
-    await dialog.accept('Reto')
-
-    await expect(page.getByTestId('python-blocks-runtime-output')).toBeVisible()
-    await expect(page.locator('.runtime-success')).toContainText('Execution finished', { timeout: 20000 })
-    await expect(page.locator('.runtime-target')).toContainText('Hello Reto', { timeout: 20000 })
+    await expect(page.locator('.runtime-error')).toContainText('main-thread execution is disabled')
   })
 
   test('clearing runtime output collapses the terminal again', async ({ page }) => {
+    await mockRuntime(page)
+    await page.reload()
+    await page.waitForSelector('.python-blocks-board')
     await page.evaluate(() => {
       const store = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('python-blocks')
-      store.pythonCode = 'print(7)'
+      store.importPythonCode('print(7)')
     })
 
     await page.getByTestId('python-blocks-run-browser').click()
@@ -235,7 +249,7 @@ test.describe('Python Blocks Editor – UI structure', () => {
 
     await page.getByRole('button', { name: 'Clear output' }).click()
 
-    await expect(page.getByTestId('python-blocks-runtime-output')).toHaveCount(0)
+    await expect(page.getByTestId('python-blocks-runtime-output')).not.toBeVisible()
     await expect(page.locator('.runtime-success')).toContainText('Output cleared.')
   })
 
@@ -1105,10 +1119,10 @@ test.describe('Python Blocks Editor – Python import', () => {
   test('Python import surfaces parse errors in the UI', async ({ page }) => {
     await openNerdMode(page)
 
-    await page.getByTestId('python-blocks-import-input').fill('for i in range(1, 2, 3):\n    print(i)')
+    await page.getByTestId('python-blocks-import-input').fill('for i in range(:\n    print(i)')
     await page.getByTestId('python-blocks-import-run').click()
 
-    await expect(page.getByTestId('python-blocks-import-error')).toContainText('range')
+    await expect(page.getByTestId('python-blocks-import-error')).toContainText('Could not parse')
     await expect(page.locator('.code-content')).toContainText('Empty program')
   })
 })
@@ -1146,5 +1160,53 @@ test.describe('Python Blocks Editor – drag-and-drop palette interaction', () =
     const id = await callStoreAction(page, 'python-blocks', 'createBlock', 'print')
     await callStoreAction(page, 'python-blocks', 'dropInBody', id, null, 'body', null)
     await expect(page.locator('.stat-block[draggable="true"]')).toBeVisible()
+  })
+})
+
+
+test.describe('Runtime and persistence regressions', () => {
+  test('hide, clear, and run again retain the live terminal target', async ({ page }) => {
+    await mockRuntime(page)
+    await page.goto('/')
+    await page.waitForSelector('.python-blocks-board')
+    await callStoreAction(page, 'python-blocks', 'importPythonCode', 'print(42)')
+    await page.getByTestId('python-blocks-run-browser').click()
+    await expect(page.locator('.runtime-target')).toContainText('42')
+    await page.evaluate(() => { window.__originalTarget = document.querySelector('.runtime-target') })
+    await page.getByTestId('python-blocks-runtime-toggle').click()
+    await expect(page.getByTestId('python-blocks-runtime-output')).not.toBeVisible()
+    await page.getByTestId('python-blocks-runtime-toggle').click()
+    await page.getByRole('button', { name: 'Clear output', exact: true }).click()
+    await callStoreAction(page, 'python-blocks', 'importPythonCode', 'print(7)')
+    await page.getByTestId('python-blocks-run-browser').click()
+    await expect(page.locator('.runtime-target')).toContainText('7')
+    expect(await page.evaluate(() => window.__originalTarget === document.querySelector('.runtime-target'))).toBe(true)
+    expect(await page.evaluate(() => window.__runtimeCreated)).toBe(1)
+  })
+
+  test('stop terminates an active run and leaves editing responsive', async ({ page }) => {
+    await mockRuntime(page)
+    await page.goto('/')
+    await page.waitForSelector('.python-blocks-board')
+    await callStoreAction(page, 'python-blocks', 'importPythonCode', 'while True:\n    pass')
+    await page.getByTestId('python-blocks-run-browser').click()
+    await expect(page.getByRole('button', { name: 'Stop / reset runtime' })).toBeEnabled()
+    await page.getByRole('button', { name: 'Stop / reset runtime' }).click()
+    await expect(page.getByTestId('python-blocks-run-browser')).toBeEnabled()
+    await expect(page.locator('.runtime-success')).toContainText('runtime reset')
+    expect(await page.evaluate(() => window.__runtimeKilled)).toBe(1)
+    await callStoreAction(page, 'python-blocks', 'importPythonCode', 'print(7)')
+    await page.getByTestId('python-blocks-run-browser').click()
+    await expect(page.locator('.runtime-target')).toContainText('7')
+  })
+
+  test('blocked session storage leaves the editor usable with recovery guidance', async ({ page }) => {
+    await page.addInitScript(() => Object.defineProperty(window, 'sessionStorage', { get() { throw new Error('denied') } }))
+    await page.goto('/')
+    await expect(page.locator('.python-blocks-board')).toBeVisible()
+    await expect(page.getByRole('status')).toContainText('Session storage is unavailable')
+    await callStoreAction(page, 'python-blocks', 'importPythonCode', 'print(42)')
+    await page.getByTestId('python-blocks-advanced-toggle').click()
+    await expect(page.locator('.code-content')).toContainText('print(42)')
   })
 })

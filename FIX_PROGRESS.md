@@ -24,6 +24,18 @@ Each completed item is a separate commit including its regression checks and thi
 | Stale artifacts | Done | Removed the broken tracked deployment entry and duplicate generated icon; builds now target ignored `dist/`. The source entry/public icon are authoritative. Parent build continues supplying its own output directory. |
 | Dependency advisories | Done | A clean install exposed eight advisory entries. Compatible lockfile updates (including Vue 3.5.45, Vite 8.3.6, and PostCSS 8.5.32) report zero npm audit vulnerabilities. Unit regressions and the locked-toolchain production build pass. |
 | Worker program API | Done | The live smoke test revealed `donkey.process` feeds terminal stdin rather than executing a program. The adapter now calls `execute` for complete programs; regression verifies the correct API. Live verification follows below. |
-| Remaining additional concerns | Pending | CI and final browser verification. |
+| CI and verification | Done | Added clean-install Node 24/Python 3.12 CI, separate browser-free importer config, Playwright Chromium configuration, runtime/storage regressions, and a static-subpath production test. Local results: 62 Node/CPython regressions, 42 importer tests, 68 browser tests, production build, and real CDN-backed worker smoke check pass. |
 
 Unit tests use Node's built-in runner and installed CPython (`python3`) for semantic comparisons. Browser checks and locked-toolchain validation will be recorded separately; neither is implied by passing Node tests.
+
+## Final verification (6 November 2026)
+
+- Clean install completed and `npm ls --depth=0` reported consistent installed versions.
+- `npm test`: Node/CPython regressions and all 42 importer tests pass. `node --test --test-isolation=none tests/unit/*.test.js` reports 62 individual cases.
+- `npm run build`: passes with locked Vite 8.3.6; output stays in ignored `dist/`.
+- `npm run test:e2e`: all 68 browser tests pass using cached Chromium with the executable-path override. Includes blocked storage, retained output target, cancellation, and built assets served at `/preview/editor/`.
+- `npm run test:runtime`: real pinned PyScript CDN, repeated worker execution and infinite-loop reset pass. This network integration check is separate from deterministic CI.
+- `npm audit`: zero reported vulnerabilities after compatible dependency updates.
+- No parent source, hosting settings, parent Git index, or parent submodule pointer was changed. No push or deployment was performed.
+
+Production execution still needs cross-origin-isolation headers (and a suitable embedding policy). Those deployment changes are deliberately deferred because the parent site must remain unchanged. Editing and Python import/export remain available without isolation; Run explains the requirement. A dedicated origin remains necessary if the hosting product is intended to run untrusted programs; workers provide cancellation, not authority isolation.

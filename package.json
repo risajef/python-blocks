@@ -10,7 +10,10 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:unit": "node --test tests/unit/*.test.js"
+    "test:unit": "node --test tests/unit/*.test.js",
+    "test:import": "playwright test --config=playwright.import.config.js",
+    "test": "npm run test:unit && npm run test:import",
+    "test:runtime": "playwright test --config=playwright.runtime.config.js"
   },
   "dependencies": {
     "@lezer/python": "^1.1.18",
@@ -25,5 +28,8 @@
     "postcss": "^8.4.14",
     "tailwindcss": "^3.1.6",
     "vite": "^8.1.4"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }
