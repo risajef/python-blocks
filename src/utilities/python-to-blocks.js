@@ -229,6 +229,17 @@ function mapTopLevelNode(node, source) {
 }
 
 function mapStatement(node, source) {
+  if (/^async\b/.test(source.slice(node.from, node.to))) return mapRawStatement(node, source)
+  try {
+    return mapSupportedStatement(node, source)
+  } catch (error) {
+    // Parsing has already succeeded. Unsupported mappings preserve the whole statement.
+    if (error instanceof PythonImportError) return mapRawStatement(node, source)
+    throw error
+  }
+}
+
+function mapSupportedStatement(node, source) {
   switch (node.name) {
     case 'DecoratedStatement':
       return mapDecoratedStatement(node, source)
@@ -501,7 +512,7 @@ function mapPrintStatement(node, source) {
 }
 
 function mapWhileStatement(node, source) {
-  if (directNamedChild(node, 'elseClause')) {
+  if (directNamedChild(node, 'else')) {
     throw new PythonImportError('while ... else is not supported.', lineNumberAt(source, node.from))
   }
 
@@ -568,7 +579,7 @@ function mapIfStatement(node, source) {
 }
 
 function mapForStatement(node, source) {
-  if (directNamedChild(node, 'elseClause')) {
+  if (directNamedChild(node, 'else')) {
     throw new PythonImportError('for ... else is not supported.', lineNumberAt(source, node.from))
   }
 
@@ -648,6 +659,14 @@ function mapFunctionDefinition(node, source) {
 
   if (!nameNode || !paramListNode || !bodyNode) {
     throw new PythonImportError('Invalid function definition.', lineNumberAt(source, node.from))
+  }
+
+  const paramSource = source.slice(paramListNode.from + 1, paramListNode.to - 1).trim()
+  const simpleParams = /^[$A-Z_a-z][\w$]*(?:\s*,\s*[$A-Z_a-z][\w$]*)*\s*,?$/.test(paramSource)
+  if ((paramSource && !simpleParams)
+      || source.slice(paramListNode.to, bodyNode.from).includes('->')
+      || childNodes(node).some(child => child.name === 'TypeParamList')) {
+    return mapRawStatement(node, source)
   }
 
   return {

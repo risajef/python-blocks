@@ -13,7 +13,7 @@ Each completed item is a separate commit including its regression checks and thi
 | 5. Descendant promotion | Done | Preserve the incoming subtree before deleting its old ancestor, then refresh once. Slot and argument promotion regressions pass. |
 | 6. Positional parent contexts | Done | Reindex owned children after argument/handler/case removal and generate once per removal. Delete-after-splice and move-after-splice regressions pass. |
 | 7. Cancellable execution boundary | Done | Removed unsafe main-thread fallback; require worker/isolation before CDN loading. Reset terminates the worker; local dev/preview send isolation headers. Adapter and unsupported-environment tests pass. Production headers/dedicated-origin hosting need a later deployment change; parent site remains untouched. |
-| 8. Unsupported syntax preservation | Pending | |
+| 8. Unsupported syntax preservation | Done | Preserve async constructs, return annotations, complex parameter signatures, and unsupported mapped statements as whole raw statements. CPython verifies coroutine identity, annotations, defaults, variadics, and loop-else behavior. |
 | 9. Runtime lifecycle | Pending | |
 | 10. Persistence resilience | Pending | |
 | Additional review concerns | Pending | Loader retries, source logging, diagnostics, dependencies, deployment assumptions, stale artifacts, and CI. |
