@@ -129,7 +129,7 @@ npm run preview
 ```
 
 * `npm run dev` starts the Vite dev server.
-* `npm run build` writes the production build to `docs/`.
+* `npm run build` writes the production build to ignored `dist/`.
 * `npm run preview` serves the production build locally.
 
 ## Testing
