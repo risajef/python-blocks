@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { pythonBlocksToPython } from '../utilities/python-blocks-to-python.js'
 import { parsePythonToBlocks } from '../utilities/python-to-blocks.js'
 
-import { subtreeIds } from '../utilities/block-tree.js'
+import { childEdges, subtreeIds } from '../utilities/block-tree.js'
 
 const STORAGE_KEY = 'python-blocks-state'
 
@@ -478,11 +478,18 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       }
     },
 
+    reindexChildren(parentId) {
+      for (const { id, ctx } of childEdges(this.blocks[parentId])) {
+        const child = this.blocks[id]
+        if (child) { child.parentId = parentId; child.parentCtx = ctx }
+      }
+    },
+
     removeArgSlot(parentId, argIdx) {
       const p = this.blocks[parentId]
-      if (!p) return
+      if (!p || !Number.isInteger(argIdx) || argIdx < 0 || argIdx >= p.args.length) return
       const existing = p.args[argIdx]
-      if (existing) this.deleteBlock(existing)  // detach sets p.args[argIdx]=null internally
+      if (existing) this.removeSubtree(existing)  // detach sets p.args[argIdx]=null internally
       p.args.splice(argIdx, 1)
       if (p.type === 'fromImportStmt' && Array.isArray(p.importAliases)) {
         p.importAliases.splice(argIdx, 1)
@@ -490,6 +497,7 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       if (p.type === 'withStmt' && Array.isArray(p.withAliases)) {
         p.withAliases.splice(argIdx, 1)
       }
+      this.reindexChildren(parentId)
       this.refresh()
     },
 
@@ -515,9 +523,10 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       if (!p || !p.exceptHandlers?.[idx]) return
       const handler = p.exceptHandlers[idx]
       for (const existing of [...handler.body]) {
-        if (existing) this.deleteBlock(existing)
+        if (existing) this.removeSubtree(existing)
       }
       p.exceptHandlers.splice(idx, 1)
+      this.reindexChildren(parentId)
       this.refresh()
     },
 
@@ -533,9 +542,10 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       if (!p || !p.matchCases?.[idx]) return
       const matchCase = p.matchCases[idx]
       for (const existing of [...matchCase.body]) {
-        if (existing) this.deleteBlock(existing)
+        if (existing) this.removeSubtree(existing)
       }
       p.matchCases.splice(idx, 1)
+      this.reindexChildren(parentId)
       this.refresh()
     },
 
@@ -545,7 +555,7 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       p.showElse = visible
       if (!visible) {
         for (const existing of [...p.elseBody]) {
-          if (existing) this.deleteBlock(existing)
+          if (existing) this.removeSubtree(existing)
         }
       }
       this.refresh()
@@ -557,7 +567,7 @@ export const usePythonBlocksStore = defineStore('python-blocks', {
       p.showFinally = visible
       if (!visible) {
         for (const existing of [...p.finallyBody]) {
-          if (existing) this.deleteBlock(existing)
+          if (existing) this.removeSubtree(existing)
         }
       }
       this.refresh()
