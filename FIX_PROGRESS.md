@@ -20,6 +20,7 @@ Each completed item is a separate commit including its regression checks and thi
 | Source logging | Done | Full pasted-source diagnostics require explicit `parsePythonToBlocks(source, { debug: true })`; normal failures log no source. Opt-in/opt-out tests pass. |
 | Document diagnostics | Done | Structured diagnostics identify missing slots and invalid references/types; Run is blocked for incomplete/corrupt documents. Refresh validates before generating and unknown nodes fail explicitly. Regression tests pass. |
 | Unused dependencies | Done | Removed nine unused direct dependencies and pruned the lockfile with npm offline. Source imports no longer depend on those packages. Clean-install verification is recorded below. |
-| Remaining additional concerns | Pending | Deployment assumptions, stale artifacts, and CI. |
+| Deployment assumptions | Done | Relative asset base/favicon, hash routing, local styles, and accurate application title make the source build self-contained at static-host subpaths. Production-header requirements are documented; parent integration unchanged. |
+| Remaining additional concerns | Pending | Stale artifacts and CI. |
 
 Unit tests use Node's built-in runner and installed CPython (`python3`) for semantic comparisons. Browser checks and locked-toolchain validation will be recorded separately; neither is implied by passing Node tests.

@@ -164,3 +164,7 @@ Playwright uses Chrome, so a local Chrome installation is expected.
 
 * VS Code
 * Volar
+
+## Static hosting
+
+Build assets use relative URLs, and routing uses a hash so the app can run at `/` or beneath a static-host subpath without history rewrites. The editor has no required stylesheet outside its build output. Serve the complete output directory; production Python execution additionally requires the isolation headers described above.
