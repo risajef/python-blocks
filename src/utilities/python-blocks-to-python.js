@@ -195,13 +195,29 @@ function stmtCode(blocks, id, depth) {
     case 'return': return `${p}return ${e(b.slots.value)}`
     case 'yieldStmt': return `${p}${yieldCode(blocks, b)}`
     case 'callStmt': {
-      const callee = b.slots?.callee ? e(b.slots.callee) : (b.name || '???')
+      const callee = b.slots?.callee ? groupedExprCode(blocks, b.slots.callee) : (b.name || '???')
       return `${p}${callee}(${callArgsCode(blocks, b.args)})`
     }
     case 'break': return `${p}break`
     case 'continue': return `${p}continue`
     default: return `${p}# ???`
   }
+}
+
+// These expressions need grouping when used as a primary or comparison operand.
+function groupedExprCode(blocks, id) {
+  const code = exprCode(blocks, id)
+  return ['compare', 'not', 'lambda', 'rawExpr'].includes(blocks[id]?.type)
+    ? `(${code})`
+    : code
+}
+
+function subscriptIndexCode(blocks, id) {
+  const block = blocks[id]
+  // Multidimensional indices may include slices, which cannot be parenthesized.
+  return block?.type === 'tupleExpr'
+    ? block.args.filter(Boolean).map(arg => exprCode(blocks, arg)).join(', ')
+    : exprCode(blocks, id)
 }
 
 function exprCode(blocks, id) {
@@ -217,20 +233,23 @@ function exprCode(blocks, id) {
     case 'longStr': return encodeQuotedString('', b.value, { tripleQuoted: true })
     case 'formatStr': return encodeQuotedString('f', b.value, { tripleQuoted: Boolean(b.tripleQuoted) })
     case 'rawStr': return encodeQuotedString('r', b.value, { tripleQuoted: Boolean(b.tripleQuoted), raw: true })
-    case 'binOp': return `(${e(b.slots.left)} ${b.op || '+'} ${e(b.slots.right)})`
-    case 'compare': return `${e(b.slots.left)} ${b.op || '=='} ${e(b.slots.right)}`
+    case 'binOp': return `(${groupedExprCode(blocks, b.slots.left)} ${b.op || '+'} ${groupedExprCode(blocks, b.slots.right)})`
+    case 'compare': return `${groupedExprCode(blocks, b.slots.left)} ${b.op || '=='} ${groupedExprCode(blocks, b.slots.right)}`
     case 'boolOp': return `(${e(b.slots.left)} ${b.op || 'and'} ${e(b.slots.right)})`
     case 'conditionalExpr': return `(${e(b.slots.whenTrue)} if ${e(b.slots.condition)} else ${e(b.slots.whenFalse)})`
     case 'not': return `not (${e(b.slots.value)})`
-    case 'memberExpr': return `${e(b.slots.value)}.${b.name || 'attr'}`
-    case 'subscriptExpr': return `${e(b.slots.value)}[${e(b.slots.index)}]`
+    case 'memberExpr': return `${groupedExprCode(blocks, b.slots.value)}.${b.name || 'attr'}`
+    case 'subscriptExpr': return `${groupedExprCode(blocks, b.slots.value)}[${subscriptIndexCode(blocks, b.slots.index)}]`
     case 'sliceExpr': {
       const start = b.slots.start ? e(b.slots.start) : ''
       const end = b.slots.end ? e(b.slots.end) : ''
       const step = b.slots.step ? e(b.slots.step) : ''
       return step ? `${start}:${end}:${step}` : `${start}:${end}`
     }
-    case 'tupleExpr': return (b.args || []).filter(Boolean).map(a => e(a)).join(', ')
+    case 'tupleExpr': {
+      const items = (b.args || []).filter(Boolean).map(a => e(a))
+      return `(${items.join(', ')}${items.length === 1 ? ',' : ''})`
+    }
     case 'listExpr': return `[${(b.args || []).filter(Boolean).map(a => e(a)).join(', ')}]`
     case 'listCompExpr': {
       const filterCode = b.filterText ? ` ${b.filterText}` : ''
@@ -245,7 +264,7 @@ function exprCode(blocks, id) {
     case 'generatorExpr': return generatorExprCode(blocks, b)
     case 'yieldExpr': return `(${yieldCode(blocks, b)})`
     case 'callExpr': {
-      const callee = b.slots?.callee ? e(b.slots.callee) : (b.name || '???')
+      const callee = b.slots?.callee ? groupedExprCode(blocks, b.slots.callee) : (b.name || '???')
       return `${callee}(${callArgsCode(blocks, b.args)})`
     }
     case 'lambda': return `lambda ${(b.params || []).join(', ')}: ${e(b.slots.value)}`

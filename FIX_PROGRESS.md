@@ -7,7 +7,7 @@ Each completed item is a separate commit including its regression checks and thi
 | Item | Status | Change and validation |
 | --- | --- | --- |
 | 1. Literal semantics | Done | Decode simple escapes once; preserve complex/bytes/concatenated/formatted literal source with raw expression fallback. Twelve CPython value/type round trips pass (`npm run test:unit`). |
-| 2. Expression grouping | Pending | |
+| 2. Expression grouping | Done | Group compound comparison/primary operands and preserve tuple arity, including multidimensional slice indices. Eight CPython/manual-block regressions pass. |
 | 3. Match indentation | Pending | |
 | 4. Tree move validation | Pending | |
 | 5. Descendant promotion | Pending | |
